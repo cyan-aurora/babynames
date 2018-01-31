@@ -1,8 +1,13 @@
+import argparse
 import bz2
 import csv
 
-now = 2016
-born = 2000
+parser = argparse.ArgumentParser()
+parser.add_argument("born", type=int, help="the year you were born")
+parser.add_argument("--now", type=int, default=2016, help="how many tnames to show")
+parser.add_argument("--display", type=int, default=10, help="how many tnames to show")
+args = parser.parse_args()
+
 p_t = .005
 
 p_now = {}
@@ -15,9 +20,9 @@ with bz2.BZ2File("data/babynames.csv.bz2", "rb") as names_f:
 		r_year = int(row[0])
 		r_name = row[2]
 		r_p = float(row[4])
-		if r_year == born:
+		if r_year == args.born:
 			p_born[r_name] = r_p
-		if r_year == now:
+		if r_year == args.now:
 			p_now[r_name] = r_p
 
 # P(t)|P(name) =
@@ -54,7 +59,7 @@ for name in p_born:
 		by_bayes.append((b, name))
 by_bayes.sort()
 
-for i in range(10):
+for i in range(args.display):
 	t = by_bayes[i]
 	name = t[1]
 	b = t[0]
