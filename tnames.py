@@ -5,7 +5,9 @@ import csv
 parser = argparse.ArgumentParser()
 parser.add_argument("born", type=int, help="the year you were born")
 parser.add_argument("--now", type=int, default=2016, help="how many tnames to show")
+parser.add_argument("--gender", type=str, help="only display names from this gender. 'M' or 'F' (only, due to data)")
 parser.add_argument("--display", type=int, default=10, help="how many tnames to show")
+parser.add_argument("--check", type=str, help="display the bayes' rule probability for a given name")
 args = parser.parse_args()
 
 p_t = .005
@@ -18,8 +20,11 @@ with bz2.BZ2File("data/babynames.csv.bz2", "rb") as names_f:
 	reader.next() # Skip headings
 	for row in reader:
 		r_year = int(row[0])
+		r_gender = row[1]
 		r_name = row[2]
 		r_p = float(row[4])
+		if args.gender and r_gender != args.gender:
+			continue
 		if r_year == args.born:
 			p_born[r_name] = r_p
 		if r_year == args.now:
@@ -51,16 +56,23 @@ def bayes(name):
 	den = p_t*p_name_given_t + (1-p_t)*p_name_given_not_t
 	return num/den
 
-by_bayes = []
-for name in p_born:
-	b = bayes(name)
-	# Ignore b == 0, they're outlier names
-	if b > 0:
-		by_bayes.append((b, name))
-by_bayes.sort()
+def fmt_percent(f):
+	return "{:.3%}".format(f)
 
-for i in range(args.display):
-	t = by_bayes[i]
-	name = t[1]
-	b = t[0]
-	print("{} ({})".format(name, b))
+if args.check:
+	print fmt_percent(bayes(args.check))
+else:
+	by_bayes = []
+	for name in p_born:
+		b = bayes(name)
+		# Ignore b == 0, they're outlier names
+		if b > 0:
+			by_bayes.append((b, name))
+	by_bayes.sort()
+
+	for i in range(args.display):
+		t = by_bayes[i]
+		name = t[1]
+		b = t[0]
+		print("{} ({})".format(name, fmt_percent(b)))
+
